@@ -58,7 +58,7 @@ func updateDb(client *http.Client, db *sql.DB, instrument, price string, timer c
 
 		for _, bar := range minuteBars {
 			if bar.Complete {
-				_, err := stmt.Exec(bar.Time, bar.Bid.O, bar.Bid.H, bar.Bid.L, bar.Bid.C, bar.Volume)
+				_, err := stmt.Exec(bar.Time, bar.Price.O, bar.Price.H, bar.Price.L, bar.Price.C, bar.Volume)
 				if err != nil {
 					panic(err)
 				}
@@ -86,11 +86,11 @@ func updateDb(client *http.Client, db *sql.DB, instrument, price string, timer c
 func createTables(db *sql.DB, pairs, prices []string) {
 	createFmtStr := `CREATE TABLE IF NOT EXISTS %v (
 		time	TIMESTAMPTZ	NOT NULL UNIQUE,
-		open  NUMERIC NULL,
-		high  NUMERIC NULL,
-		low   NUMERIC NULL,
-		close NUMERIC NULL,
-		volume  NUMERIC NULL
+		open  NUMERIC(10,6) NULL,
+		high  NUMERIC(10,6) NULL,
+		low   NUMERIC(10,6) NULL,
+		close NUMERIC(10,6) NULL,
+		volume  BIGINT NULL
 	  );`
 	for _, pair := range pairs {
 		for _, price := range prices {

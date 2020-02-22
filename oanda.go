@@ -19,8 +19,8 @@ type OandaTime struct {
 	time.Time
 }
 
-// BidPrices type
-type BidPrices struct {
+// Prices type
+type Prices struct {
 	O float64 `json:"o,string"`
 	H float64 `json:"h,string"`
 	L float64 `json:"l,string"`
@@ -29,10 +29,10 @@ type BidPrices struct {
 
 // Bar is a single candlestick bar
 type Bar struct {
-	Time     string    `json:"time"`
-	Complete bool      `json:"complete"`
-	Volume   float64   `json:"volume"`
-	Bid      BidPrices `json:"bid"`
+	Time     string  `json:"time"`
+	Complete bool    `json:"complete"`
+	Volume   float64 `json:"volume"`
+	Price    Prices  `json:"price"`
 }
 
 // InstrumentResponse mirrors the response from Oanda
@@ -75,7 +75,8 @@ func getMinuteBars(client *http.Client, earliestTime time.Time, instrument, pric
 	}
 
 	bars := InstrumentResponse{}
-	err = json.Unmarshal(b, &bars)
+	fixedJSON := strings.ReplaceAll(strings.ReplaceAll(string(b), "bid", "price"), "ask", "price")
+	err = json.Unmarshal([]byte(fixedJSON), &bars)
 	if err != nil {
 		panic(err)
 	}
