@@ -57,7 +57,7 @@ func getMinuteBars(client *http.Client, earliestTime time.Time, instrument, pric
 	oandaInstrumentName := strings.ToUpper(fmt.Sprintf("%v_%v", instrument[0:3], instrument[3:6]))
 	oandaPriceName := strings.ToUpper(price[0:1])
 	fmt.Printf("Getting oanda data for %v of %v for %v\n", price, instrument, earliestTime)
-	fullURL := url + fmt.Sprintf("/v3/instruments/%v/candles?price=%v&count=5000&granularity=S5&from=%v&includeFirst=false", oandaInstrumentName, oandaPriceName, earliestTime.Unix())
+	fullURL := url + fmt.Sprintf("/v3/instruments/%v/candles?price=%v&count=5000&granularity=S5&from=%v&includeFirst=true", oandaInstrumentName, oandaPriceName, earliestTime.Unix())
 	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		panic(err)
