@@ -53,10 +53,11 @@ func (ot *OandaTime) UnmarshalJSON(b []byte) (err error) {
 	return
 }
 
-func getMinuteBars(earliestTime time.Time) InstrumentResponse {
-	client := &http.Client{}
-
-	fullURL := url + fmt.Sprintf("/v3/instruments/EUR_USD/candles?price=B&count=5000&granularity=M1&from=%v&includeFirst=false", earliestTime.Unix())
+func getMinuteBars(client *http.Client, earliestTime time.Time, instrument, price string) InstrumentResponse {
+	oandaInstrumentName := strings.ToUpper(fmt.Sprintf("%v_%v", instrument[0:3], instrument[3:6]))
+	oandaPriceName := strings.ToUpper(price[0:1])
+	fmt.Printf("Getting oanda data for %v of %v for %v\n", price, instrument, earliestTime)
+	fullURL := url + fmt.Sprintf("/v3/instruments/%v/candles?price=%v&count=5000&granularity=S5&from=%v&includeFirst=false", oandaInstrumentName, oandaPriceName, earliestTime.Unix())
 	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		panic(err)
