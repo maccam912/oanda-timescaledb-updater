@@ -114,7 +114,7 @@ func timergoroutine(c chan int) {
 
 func main() {
 	pairs := []string{"eurusd", "usdjpy", "gbpusd", "audusd", "usdchf", "nzdusd", "usdcad"}
-	prices := []string{"bid", "ask"}
+	prices := []string{"mid"}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"dbname=%s sslmode=disable",

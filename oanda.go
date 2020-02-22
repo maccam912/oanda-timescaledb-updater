@@ -75,7 +75,7 @@ func getMinuteBars(client *http.Client, earliestTime time.Time, instrument, pric
 	}
 
 	bars := InstrumentResponse{}
-	fixedJSON := strings.ReplaceAll(strings.ReplaceAll(string(b), "bid", "price"), "ask", "price")
+	fixedJSON := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(string(b), "bid", "price"), "ask", "price"), "mid", "price")
 	err = json.Unmarshal([]byte(fixedJSON), &bars)
 	if err != nil {
 		panic(err)
