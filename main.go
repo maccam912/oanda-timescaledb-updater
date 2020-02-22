@@ -27,7 +27,7 @@ func lastDate(db *sql.DB, instrument, price string) time.Time {
 	row := db.QueryRow(sqlStatement)
 	switch err := row.Scan(&t); err {
 	case sql.ErrNoRows:
-		result, err := time.Parse("2006-01-02 15:04:05", "2005-01-01 00:00:00")
+		result, err := time.Parse("2006-01-02 15:04:05", "2004-12-31 23:59:55")
 		if err != nil {
 			panic(err)
 		}
