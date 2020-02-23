@@ -3,13 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -73,12 +73,12 @@ func updateDb(client *http.Client, db *sql.DB, instrument, price string, timer c
 
 		err = stmt.Close()
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 
 		err = txn.Commit()
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -92,6 +92,7 @@ func createTables(db *sql.DB, pairs, prices []string) {
 		close NUMERIC(10,6) NULL,
 		volume  BIGINT NULL
 	  );`
+	_, _ = db.Query("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;")
 	for _, pair := range pairs {
 		for _, price := range prices {
 			tableName := fmt.Sprintf("%v_%v_s5", pair, price)
@@ -100,9 +101,48 @@ func createTables(db *sql.DB, pairs, prices []string) {
 			if err != nil {
 				panic(err)
 			}
+			_, err = db.Query(fmt.Sprintf(`SELECT create_hypertable('%v', 'time');`, tableName))
+			if err != nil {
+				log.Warn(err)
+			}
 		}
 	}
-	_, _ = db.Query("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;")
+
+}
+
+func createViews(db *sql.DB, pairs, prices []string) {
+	averagePrice := `CREATE OR REPLACE VIEW %v AS
+	SELECT time, (((2 * open) + (2 * close) + high + low)/6) as avg_price, volume
+	FROM %v;`
+
+	periodWeightedAverage := `CREATE OR REPLACE VIEW %v
+	AS
+	(SELECT time_bucket('%v', time) as time, 
+	sum(avg_price*volume)/sum(volume) as avg_price, 
+	sum(volume) as volume FROM %v 
+	GROUP BY time_bucket('%v', time));`
+
+	for _, pair := range pairs {
+		for _, price := range prices {
+			viewName := fmt.Sprintf("%v_avg_view", pair)
+			tableName := fmt.Sprintf("%v_%v_s5", pair, price)
+			stmt := fmt.Sprintf(averagePrice, viewName, tableName)
+			_, err := db.Query(stmt)
+			if err != nil {
+				panic(err)
+			}
+			previousViewName := viewName
+			for _, period := range []string{"1m", "5m", "15m", "30m", "1h", "4h", "8h", "12h", "1d", "1w"} {
+				WAName := fmt.Sprintf(`%v_vol_weighted_%v_view`, pair, period)
+				stmt = fmt.Sprintf(periodWeightedAverage, WAName, period, previousViewName, period)
+				previousViewName = WAName
+				_, err = db.Query(stmt)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+	}
 }
 
 func timergoroutine(c chan int) {
@@ -132,6 +172,7 @@ func main() {
 	}
 
 	createTables(db, pairs, prices)
+	createViews(db, pairs, prices)
 
 	fmt.Println("Successfully connected!")
 
